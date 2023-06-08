@@ -56,7 +56,7 @@ d3.json
             };
 
             var scalePupilPositionDistanceValue = d3.scaleLinear()
-                .domain([20, 200])
+                .domain([Math.min(...pupilPositionDistanceValue), Math.max(...pupilPositionDistanceValue)])
                 .range([0 + margin.left, width - margin.right])
 
             var scaleModulationValue = d3.scaleLinear()

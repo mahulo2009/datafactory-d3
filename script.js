@@ -5,17 +5,29 @@ d3.json
         function (result) {
             console.log("Data Loaded...")
 
+
             for (const element of result.elements) {
-                //console.log(element.name)
 
                 if (element.name == "pupilPositionDistances") {
-                    pupilPositionDistances = element
+                    console.log(element.name + ": " + element.value.elements.length)
+
+                    pupilPositionDistances = element                    
                 }
 
                 if (element.name == "modulations") {
+                    console.log(element.name + ": " + element.value.elements.length)
+
                     modulations = element
                 }
+
+                if (element.name == "lensLetIDs") {
+                    console.log(element.name + ": " + element.value.length)
+
+                    lensLetIDs = element
+                }
+
             }
+
 
             pupilPositionDistancesValue = []
 
@@ -31,22 +43,16 @@ d3.json
             for (const element of modulations.value.elements) {
                 //console.log(modulations.name)
                 modulationsValue.push(element.value)
-
             }
             //console.log(modulationsValue.length)
 
-
             var pupilPositionDistanceValue = pupilPositionDistancesValue[0]
-            var modulationValue = modulationsValue[0]
+            var data = modulationsValue
 
-            var data = pupilPositionDistanceValue.map((value, index) => {
-                return { x: value, y: modulationValue[index] };
-            });
+            console.log(data.length)
 
-            console.log(data)
-
-            width = 460
-            height = 150
+            width = 800
+            height = 200
 
             var margin = {
                 top: 10,
@@ -55,13 +61,20 @@ d3.json
                 left: 30
             };
 
-            var scalePupilPositionDistanceValue = d3.scaleLinear()
-                .domain([Math.min(...pupilPositionDistanceValue), Math.max(...pupilPositionDistanceValue)])
-                .range([0 + margin.left, width - margin.right])
+            const colorScale = d3.scaleSequential()
+                .domain([1, 0]) // Rango de valores en tu matriz
+                .interpolator(d3.interpolateRdYlBu); // Escala de colores (puedes elegir otra interpolación)
 
-            var scaleModulationValue = d3.scaleLinear()
-                .domain([0, 1])
-                .range([height - margin.bottom, 0 + margin.top])
+            // Crea el tooltip
+            const tooltip = d3.select('body')
+                .append('div')
+                .attr('class', 'tooltip')
+                .style('position', 'absolute')
+                .style('visibility', 'hidden')
+                .style('background-color', 'rgba(0, 0, 0, 0.8)')
+                .style('color', 'white')
+                .style('padding', '5px')
+                .style('font-size', '12px');
 
 
             var svg = d3.select("body")
@@ -69,29 +82,35 @@ d3.json
                 .attr("width", width)
                 .attr("height", height)
 
-            // Create a line generator
-            const lineGenerator = d3.line()
-                .x(function (d) { return scalePupilPositionDistanceValue(d.x) })
-                .y(function (d) { return scaleModulationValue(d.y) })
+            var radius = 4.5;
+            var margining = 1;
+            var cellSize = (radius * 2) + margining;
 
-            // Draw the line
-            svg.append("path")
-                .attr("d", lineGenerator(data))
-                .attr("stroke", "black")
-                .attr("stroke-width", 2)
-                .attr("fill", "none");
+            svg.selectAll("g")
+                .data(data)
+                .enter().append("g")
+                .attr("transform", function (d, i) {
+                    return "translate(" + i * cellSize + ")"
+                })
+                .selectAll('circle')
+                .data(function (d) { return d; })
+                .enter()
+                .append('circle')
+                .attr('r', (_, i) => (radius))
+                .attr('cx', (_, i) => (radius + margin.left))
+                .attr('cy', (_, i) => (radius + i * cellSize + margin.top))
+                .style('fill', d => colorScale(d))
+                .on('mouseover', (event, d, i) => {
 
-            var ejeY = d3.axisLeft(scaleModulationValue)
-            svg.append("g")
-                .attr("transform", "translate(" + margin.left + ",0)")
-                .call(ejeY)
-
-            var ejeX = d3.axisBottom(scalePupilPositionDistanceValue)
-                .ticks(10)
-                .tickFormat(d3.format(".3s"))
-
-            svg.append("g")
-                .attr("transform", "translate(0," + (height - margin.bottom) + ")")
-                .call(ejeX)
+                    tooltip.style('visibility', 'visible')
+                        .html(`Modulation: ${d.toFixed(2)}<br> 
+                                Pupil Position: ${pupilPositionDistanceValue[0].toFixed(2)}<br> 
+                                ${i}`)
+                        .style('left', (event.pageX + 10) + 'px')
+                        .style('top', (event.pageY - 10) + 'px');
+                })
+                .on('mouseout', () => {
+                    tooltip.style('visibility', 'hidden');
+                });
 
         })

@@ -67,23 +67,20 @@ d3.json("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/fibrec
         .attr("stroke", "black")
         .attr("fill", "transparent")
         .attr("flux", function (d) { return d.flux.value })
+        .attr("sigma", function (d) { return Math.sqrt(Math.pow(d.sigma[0], 2) + Math.pow(d.sigma[1], 2)) })
         //.attr("fill",function(d) { return scaleFlux(d.flux.value) })
         .on("mouseover",function(d) { drawTooltip(d) })
         .on("mouseout",function(d) { removeTooltip(d) })
 
 
-
-        var slider = d3.select("#sliderFlux");
-        slider.on("input", function () {
-
+        var sliderFlux = d3.select("#sliderFlux");
+        sliderFlux.on("input", function () {
             var sliderValue = parseFloat(this.value);
 
             svg.selectAll("circle")
                 .each(function () {
 
                     var circle = d3.select(this)
-
-
                     if (parseFloat(circle.attr("flux")) < sliderValue) {
                         circle.attr("stroke", "red")
                     } else {
@@ -91,7 +88,24 @@ d3.json("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/fibrec
                     }
 
                 })
-        });        
+        });
+
+        var sliderSigma = d3.select("#sliderSigma");
+        sliderSigma.on("input", function () {
+            var sliderValue = parseFloat(this.value);
+
+            svg.selectAll("circle")
+                .each(function () {
+
+                    var circle = d3.select(this)
+                    if (parseFloat(circle.attr("sigma")) > sliderValue) {
+                        circle.attr("stroke", "red")
+                    } else {
+                        circle.attr("stroke", "black")
+                    }
+
+                })
+        });
 
         var tooltip =
             d3.select("body")

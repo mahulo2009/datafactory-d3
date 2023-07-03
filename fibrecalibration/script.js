@@ -36,13 +36,13 @@ d3.json("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/fibrec
 
     var scaleY
         = d3.scaleLinear()
-            .domain([0,1024] )
+            .domain([1024, 0])
             .range([0,height])
 
     var scaleRadius
             = d3.scaleLinear()
                 .domain([0,15])
-                .range([3,7])
+            .range([3, 5])
 
     var scaleFlux
         = d3.scaleLinear()
@@ -51,7 +51,7 @@ d3.json("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/fibrec
 
     // Html UL (unsorted list)
     var svg
-        = d3.select("body")
+        = d3.select("#fibregraph")
             .append("svg")
 
     svg
@@ -61,35 +61,52 @@ d3.json("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/fibrec
         .data(theWFSCentroids)
         .enter()
         .append("circle")
-        .attr("r",          function(d) { return scaleRadius(
-                                                Math.sqrt(
-                                                    Math.pow(d.sigma[0],2) + Math.pow(d.sigma[1],2)))
-                                    })
+        .attr("r", "4")
         .attr("cx",function(d) { return scaleX(d.centroidPosition[0]) })
-        .attr("cy",function(d) { return scaleY(d.centroidPosition[1]) })
-        .attr("fill",function(d) { return scaleFlux(d.flux.value) })
+        .attr("cy", function (d) { return scaleY(d.centroidPosition[1]) })
+        .attr("stroke", "black")
+        .attr("fill", "transparent")
+        .attr("flux", function (d) { return d.flux.value })
+        //.attr("fill",function(d) { return scaleFlux(d.flux.value) })
         .on("mouseover",function(d) { drawTooltip(d) })
         .on("mouseout",function(d) { removeTooltip(d) })
 
-        var tooltip = 
+
+
+        var slider = d3.select("#sliderFlux");
+        slider.on("input", function () {
+            var sliderValue = this.value;
+            svg.selectAll("circle")
+                .each(function () {
+                    var circle = d3.select(this)
+
+                    if (circle.attr("flux") < sliderValue) {
+                        circle.attr("stroke", "red")
+                    } else {
+                        circle.attr("stroke", "black")
+                    }
+
+                })
+        });        
+
+        var tooltip =
             d3.select("body")
                 .append("div")
-                .attr("class","tooltip")
-
-        function  drawTooltip(d)
-        {
+                .attr("class", "tooltip")
+        function drawTooltip(d) {
             tooltip
-                .text("Hi")
-                .style("top",d3.event.pageY+"px")
-                .style("left",d3.event.pageX+"px")
-                .style("opacity",1)
+            .html(
+                "<b>Centroid Characterization</b><br>" +
+                "<b>Position:</b> " + d.centroidPosition[0].toFixed(1) + " " + d.centroidPosition[1].toFixed(1) + "<br>" +
+                "<b>Sigma:</b> " + d.sigma[0].toFixed(1) + " " + d.sigma[1].toFixed(1) + "<br>" +
+                "<b>Flux:</b> " + d.flux.value.toFixed(1))
+            .style("top", d3.event.pageY + "px")
+            .style("left", d3.event.pageX + "px")
+            .style("opacity", 1)
+    }
+        function removeTooltip(d) {
+            tooltip
+                .style("opacity", 0)
         }
 
-        function  removeTooltip(d)
-        {
-            tooltip
-                .style("opacity",0)
-        }
-
-})
-
+    })

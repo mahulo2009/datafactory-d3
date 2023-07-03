@@ -75,12 +75,16 @@ d3.json("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/fibrec
 
         var slider = d3.select("#sliderFlux");
         slider.on("input", function () {
-            var sliderValue = this.value;
+
+            var sliderValue = parseFloat(this.value);
+
             svg.selectAll("circle")
                 .each(function () {
+
                     var circle = d3.select(this)
 
-                    if (circle.attr("flux") < sliderValue) {
+
+                    if (parseFloat(circle.attr("flux")) < sliderValue) {
                         circle.attr("stroke", "red")
                     } else {
                         circle.attr("stroke", "black")

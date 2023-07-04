@@ -1,116 +1,176 @@
 console.log("Hello Data Factory v1.0")
 
+function parsePupilPositionDistances(result) {
+
+    for (const element of result.elements) {
+        if (element.name == "pupilPositionDistances") {        
+            pupilPositionDistances = element
+        }
+
+    }
+
+    var data = []
+    for (let i=0; i<84; i++)
+    {
+        data.push(pupilPositionDistances.value.elements[i].value);
+    }
+
+    return data;
+
+}
+
+function parseModulations(result) {
+    
+    for (const element of result.elements) {
+        if (element.name == "modulations") {
+            modulations = element
+        }
+    }
+
+    var data = []
+    for (let i=0; i<84; i++)
+    {
+        data.push(modulations.value.elements[i].value);
+    }
+
+    return data;
+}
+
+function parseLensLetIDs(result) {
+
+    for (const element of result.elements) {
+        if (element.name == "lensLetIDs") {
+            lensLetIDs = element
+        }
+    }
+
+    var data = []
+    for (let i=0; i<84; i++)
+    {
+        data.push(lensLetIDs.value[i]);
+    }
+
+    return data;
+}
+
+
 d3.json
-    ("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/data/result.json").then(
+    ("https://raw.githubusercontent.com/mahulo2009/datafactory-d3/main/pupilalignment/data/result.json").then(
         function (result) {
-            console.log("Data Loaded...")
 
+            console.log("Data Loaded...");
 
-            for (const element of result.elements) {
+            var pupilPositionDistances = parsePupilPositionDistances(result);
+            var modulations = parseModulations(result);
+            var lensLetIDs = parseLensLetIDs(result);
 
-                if (element.name == "pupilPositionDistances") {
-                    console.log(element.name + ": " + element.value.elements.length)
+            rect_size = 20
 
-                    pupilPositionDistances = element                    
-                }
+            width = rect_size * 84
+            height = rect_size * 13
 
-                if (element.name == "modulations") {
-                    console.log(element.name + ": " + element.value.elements.length)
-
-                    modulations = element
-                }
-
-                if (element.name == "lensLetIDs") {
-                    console.log(element.name + ": " + element.value.length)
-
-                    lensLetIDs = element
-                }
-
-            }
-
-
-            pupilPositionDistancesValue = []
-
-            for (const element of pupilPositionDistances.value.elements) {
-                //console.log(element.name)
-                pupilPositionDistancesValue.push(element.value)
-
-            }
-            //console.log(pupilPositionDistancesValue.length)
-
-            modulationsValue = []
-
-            for (const element of modulations.value.elements) {
-                //console.log(modulations.name)
-                modulationsValue.push(element.value)
-            }
-            //console.log(modulationsValue.length)
-
-            var pupilPositionDistanceValue = pupilPositionDistancesValue[0]
-            var data = modulationsValue
-
-            console.log(data.length)
-
-            width = 800
-            height = 200
-
-            var margin = {
-                top: 10,
-                right: 20,
-                bottom: 30,
-                left: 30
-            };
+            var pupilPositionDistancesScale  = d3.scaleLinear()
+                .domain([22,195])
+                .range([0+rect_size/2.0,height-rect_size/2.0])
 
             const colorScale = d3.scaleSequential()
-                .domain([1, 0]) // Rango de valores en tu matriz
-                .interpolator(d3.interpolateRdYlBu); // Escala de colores (puedes elegir otra interpolación)
+                .domain([1, 0])
+                .interpolator(d3.interpolateRdYlBu);
 
-            // Crea el tooltip
-            const tooltip = d3.select('body')
-                .append('div')
-                .attr('class', 'tooltip')
-                .style('position', 'absolute')
-                .style('visibility', 'hidden')
-                .style('background-color', 'rgba(0, 0, 0, 0.8)')
-                .style('color', 'white')
-                .style('padding', '5px')
-                .style('font-size', '12px');
+            var tooltip  = d3.select("body")
+                            .append("div")
+                            .attr("class", "tooltip")
 
-
-            var svg = d3.select("body")
+            var svgMap = d3.select("#map")
                 .append("svg")
                 .attr("width", width)
                 .attr("height", height)
+                .style("background", "yellow")
 
-            var radius = 4.5;
-            var margining = 1;
-            var cellSize = (radius * 2) + margining;
-
-            svg.selectAll("g")
-                .data(data)
-                .enter().append("g")
-                .attr("transform", function (d, i) {
-                    return "translate(" + i * cellSize + ")"
-                })
-                .selectAll('circle')
-                .data(function (d) { return d; })
+            svgMap
+                .selectAll("rect")
+                .data(modulations)
                 .enter()
-                .append('circle')
-                .attr('r', (_, i) => (radius))
-                .attr('cx', (_, i) => (radius + margin.left))
-                .attr('cy', (_, i) => (radius + i * cellSize + margin.top))
+                .append("g")
+                .on('click', (event, d ) => {
+                    drawModulation(d)
+                })
+                .attr("transform", function (d, i) {
+                    return "translate(" +  i * rect_size + ")" })
+                .selectAll("rect")
+                .data(function(d) { return d; })
+                .enter()
+                .append("rect")
+                .attr("width",rect_size)
+                .attr("height",rect_size)
                 .style('fill', d => colorScale(d))
-                .on('mouseover', (event, d, i) => {
-
+                .attr("x",0)
+                .attr("y", function(d,i,j) { 
+                    return pupilPositionDistancesScale(pupilPositionDistances[0][i]) - rect_size/2.0 } )
+                .on('mouseover', (event, d, i , j ) => {
                     tooltip.style('visibility', 'visible')
-                        .html(`Modulation: ${d.toFixed(2)}<br> 
-                                Pupil Position: ${pupilPositionDistanceValue[0].toFixed(2)}<br> 
-                                ${i}`)
+                        .html(
+                            `
+                                <b>Modulation:</b> ${d.toFixed(2)}<br>
+                            `
+                        )
                         .style('left', (event.pageX + 10) + 'px')
                         .style('top', (event.pageY - 10) + 'px');
                 })
                 .on('mouseout', () => {
                     tooltip.style('visibility', 'hidden');
-                });
+                })
+
+            var svgGraph = d3.select("#graph")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .append("g")
+
+            function drawModulation(data) {
+
+                var xScale = d3.scaleLinear()
+                    .domain([0, data.length - 1])
+                    .range([0 + 25 , width - 25]);
+
+                var yScale = d3.scaleLinear()
+                    .domain([0, 1])
+                    .range([height-25, 0]);
+
+                var axisX = d3.axisBottom (xScale)
+                var axisY = d3.axisLeft (yScale)
+
+                var modulationLine = d3.line()
+                    .x(function(d, i) { return xScale(i); })
+                    .y(function(d) { return yScale(d); });
+
+                svgGraph
+                    .append("path")
+                    .datum(data)
+                    .attr("d", modulationLine)
+                    .attr("fill", "none")
+                    .attr("stroke", "steelblue")
+                    .attr("stroke-width", 2);
+
+                dots = svgGraph.selectAll(".dot")
+                    .data(data)
+                    .enter()
+                    .append("circle")
+                    .attr("cx", function (d,i) { return xScale(i); })
+                    .attr("cy", function (d) { return yScale(d); })
+                    .transition()
+                    .duration(5000)
+                    .ease(d3.easeElastic)
+                    .attr("r", 5)
+
+                svgGraph.append("g")
+                    .attr("transform","translate (0," + (height - 25) + ")")
+                    .call(axisX)
+
+                svgGraph.append("g")
+                    .attr("transform","translate (" + 25 + ",0)")
+                    .call(axisY)
+                    
+            }
 
         })
